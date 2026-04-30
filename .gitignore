@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+.idea/
+.vscode/
+coverage/
+*.tsbuildinfo
+# NÃO ignorar dist/ — é committed artifact

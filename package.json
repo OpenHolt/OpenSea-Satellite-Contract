@@ -34,9 +34,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:types": "tsd"
+    "test:types": "tsd",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "ci": "biome ci"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.15",
     "@types/node": "20.16.0",
     "rimraf": "5.0.10",
     "tsd": "0.31.2",

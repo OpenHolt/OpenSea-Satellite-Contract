@@ -1,10 +1,7 @@
 import type { WsAppReleasePublishedMessage } from './app-release-published';
 import type { WsDeviceRevokedMessage } from './device-revoked';
+import type { WsHeartbeatAckMessage, WsHeartbeatMessage } from './heartbeat';
 import type { WsHelloMessage } from './hello';
-import type {
-  WsHeartbeatAckMessage,
-  WsHeartbeatMessage,
-} from './heartbeat';
 import type { WsWelcomeMessage } from './welcome';
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-
+import { SATELLITE_KINDS, type SatelliteKind } from '../src/satellite-kind';
 import {
   fromWireSatelliteKind,
   KIND_BY_WIRE,
@@ -8,7 +8,6 @@ import {
   WIRE_SATELLITE_KINDS,
   type WireSatelliteKind,
 } from '../src/wire-mapping';
-import { SATELLITE_KINDS, type SatelliteKind } from '../src/satellite-kind';
 
 describe('wire-mapping', () => {
   it('maps every contract kind to a wire kind via WIRE_BY_KIND', () => {
@@ -47,10 +46,7 @@ describe('wire-mapping', () => {
       PRINT_SERVER: 'PRINT_SERVER',
       HORUS: 'PUNCH_AGENT',
     };
-    for (const [kind, wire] of Object.entries(expected) as [
-      SatelliteKind,
-      WireSatelliteKind,
-    ][]) {
+    for (const [kind, wire] of Object.entries(expected) as [SatelliteKind, WireSatelliteKind][]) {
       expect(toWireSatelliteKind(kind)).toBe(wire);
     }
   });

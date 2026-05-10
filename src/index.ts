@@ -1,4 +1,7 @@
 // Satellite kind (contract names) + wire-format mapping helpers
+
+// Release metadata
+export type { ReleaseInfo } from './release/release-info';
 export { SATELLITE_KINDS, type SatelliteKind } from './satellite-kind';
 export {
   fromWireSatelliteKind,
@@ -9,18 +12,15 @@ export {
   type WireSatelliteKind,
 } from './wire-mapping';
 
-// Release metadata
-export type { ReleaseInfo } from './release/release-info';
-
 // WebSocket message types
 export type {
   DeviceRevokedReason,
   WsAppReleasePublishedMessage,
   WsClientMessage,
   WsDeviceRevokedMessage,
-  WsHelloMessage,
   WsHeartbeatAckMessage,
   WsHeartbeatMessage,
+  WsHelloMessage,
   WsServerMessage,
   WsWelcomeMessage,
 } from './ws';

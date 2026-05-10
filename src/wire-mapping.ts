@@ -6,11 +6,7 @@ import type { SatelliteKind } from './satellite-kind';
  * `SatelliteKind` do contract e converter na borda I/O via os helpers
  * abaixo.
  */
-export const WIRE_SATELLITE_KINDS = [
-  'POS_EMPORION',
-  'PRINT_SERVER',
-  'PUNCH_AGENT',
-] as const;
+export const WIRE_SATELLITE_KINDS = ['POS_EMPORION', 'PRINT_SERVER', 'PUNCH_AGENT'] as const;
 
 export type WireSatelliteKind = (typeof WIRE_SATELLITE_KINDS)[number];
 
@@ -30,8 +26,6 @@ export function toWireSatelliteKind(kind: SatelliteKind): WireSatelliteKind {
   return WIRE_BY_KIND[kind];
 }
 
-export function fromWireSatelliteKind(
-  wire: WireSatelliteKind,
-): SatelliteKind {
+export function fromWireSatelliteKind(wire: WireSatelliteKind): SatelliteKind {
   return KIND_BY_WIRE[wire];
 }

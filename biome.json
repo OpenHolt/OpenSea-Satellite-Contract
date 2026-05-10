@@ -6,14 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "**",
-      "!dist",
-      "!node_modules",
-      "!coverage",
-      "!**/*.cjs",
-      "!vitest.config.ts"
-    ]
+    "includes": ["**", "!dist", "!node_modules", "!coverage", "!**/*.cjs", "!vitest.config.ts"]
   },
   "formatter": {
     "enabled": true,

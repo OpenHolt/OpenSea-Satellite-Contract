@@ -1,23 +1,53 @@
 # `@opensea/satellite-contract`
 
-Tipos TypeScript compartilhados entre o backend `OpenSea-API` e os satélites
-desktop do ecossistema OpenSea ERP (`OpenSea-Emporion`, `OpenSea-Horus`,
-`OpenSea-PrintServer`).
+> Tipos TypeScript compartilhados que definem o **contrato** entre o backend `OpenSea-API` e os satélites desktop do ecossistema OpenSea ERP — **Emporion**, **Horus** e **PrintServer**.
 
-Elimina duplicação de definições WS event / release info / device revoke
-entre N consumidores e centraliza o mapping entre nomes do **contract** e
-o **wire format** atual em produção.
+![Versão](https://img.shields.io/badge/versão-0.1.0-blue)
+![Node](https://img.shields.io/badge/node-%3E%3D20-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-informational)
+![Licença](https://img.shields.io/badge/licença-PROPRIETARY-lightgrey)
 
-## Versão
+Elimina a duplicação de definições (eventos WebSocket, metadados de release, revogação de dispositivo) entre os N consumidores e centraliza o _mapping_ entre os nomes do **contract** e o **wire format** atualmente em produção.
 
-**v0.1.0** — skeleton. Inclui `SatelliteKind`, `ReleaseInfo`, mensagens WS
-core (hello/heartbeat/welcome/app.release.published/device.revoked), mappers
-contract↔wire. Nenhum consumer ainda importa.
+> [!NOTE]
+> Pacote **somente de tipos** (zero runtime além dos mappers). Distribuído via **Git URL público** — sem registry npm, sem SSH, sem secrets.
 
-## Instalação
+## 📑 Sumário
 
-Distribuído via Git URL público (sem npm registry, sem SSH). Adicione no
-`package.json` do consumer:
+- [Visão geral](#-visão-geral)
+- [Instalação](#-instalação)
+- [Uso / API](#-uso--api)
+- [Wire format vs contract names](#-wire-format-vs-contract-names)
+- [Scripts](#-scripts)
+- [Estrutura](#-estrutura)
+- [Contribuindo](#-contribuindo)
+- [Licença](#-licença)
+
+## 🏗️ Visão geral
+
+O `OpenSea-API` orquestra um conjunto de aplicações satélite que rodam nos terminais dos clientes. Toda a comunicação entre servidor e satélite (handshake, heartbeat, push de releases, revogação de dispositivo) trafega por mensagens WebSocket tipadas. Este pacote é a **fonte única de verdade** desses tipos: o servidor e cada satélite importam o mesmo contrato, garantindo que payloads e _discriminated unions_ não saiam de sincronia.
+
+```mermaid
+graph LR
+  C["@opensea/satellite-contract<br/>(tipos compartilhados)"]
+  API["OpenSea-API<br/>(servidor / produtor)"]
+  EMP["Emporion<br/>(satélite)"]
+  HOR["Horus<br/>(satélite)"]
+  PS["PrintServer<br/>(satélite)"]
+
+  C -.importa.-> API
+  C -.importa.-> EMP
+  C -.importa.-> HOR
+  C -.importa.-> PS
+
+  API <-->|"WsServerMessage / WsClientMessage<br/>(WebSocket)"| EMP
+  API <--> HOR
+  API <--> PS
+```
+
+## 📦 Instalação
+
+Distribuído via **Git URL público** (sem npm registry, sem SSH). Adicione ao `package.json` do consumidor, fixando a tag exata:
 
 ```json
 {
@@ -33,14 +63,11 @@ Depois:
 npm install
 ```
 
-O repo é **público** (apenas TS types, zero secrets), então qualquer
-ambiente — local, GitHub Actions, Fly.io, electron-builder — clona via
-HTTPS sem credenciais.
+O repositório é **público** (apenas tipos TS, zero secrets), então qualquer ambiente — dev local, GitHub Actions, Fly.io, electron-builder — clona via HTTPS sem credenciais. O `dist/` é committado no repo, então o artefato vem pronto, sem necessidade de toolchain de build no consumidor.
 
-### Bumpando a versão
+### Atualizando a versão
 
-Quando uma nova tag é publicada (`v0.2.0` etc.), edite o sufixo `#vX.Y.Z` no
-`package.json` do consumer e:
+Ao publicar uma nova tag (`v0.2.0` etc.), edite o sufixo `#vX.Y.Z` no `package.json` do consumidor e reinstale:
 
 ```bash
 npm cache clean --force
@@ -48,20 +75,10 @@ rm -rf node_modules
 npm install
 ```
 
-`npm` faz cache agressivo de URLs git e o sufixo de tag não é
-suficiente para invalidar — daí o `cache clean`.
+> [!WARNING]
+> O `npm` faz cache agressivo de URLs git e o sufixo de tag **não** invalida o cache sozinho — daí o `npm cache clean --force`.
 
-### Credenciais (não precisa)
-
-O repo é público — `npm install` clona via HTTPS sem qualquer
-credencial. Funciona em GitHub Actions runners limpos, electron-builder
-no CI, Fly.io, dev local sem SSH key, etc.
-
-Se precisar voltar atrás e tornar privado (ex: incluir secrets no
-contract), o consumer precisaria configurar SSH key ou PAT — ver
-histórico git deste arquivo pra opções.
-
-## Uso (depois de publicado)
+## 🧩 Uso / API
 
 ```ts
 import {
@@ -76,25 +93,43 @@ import {
 // SatelliteKind: 'EMPORION' | 'PRINT_SERVER' | 'HORUS' (contract names)
 const myKind: SatelliteKind = 'EMPORION';
 
-// Converter pra wire format histórico ainda em uso na API/DB
+// Converter para o wire format histórico ainda em uso na API/DB
 const wire = toWireSatelliteKind(myKind); // 'POS_EMPORION'
 
-// Receber WS event e narrowing por type
+// Receber um evento WS e fazer narrowing por `type`
 function handle(msg: WsServerMessage): void {
   if (msg.type === 'app.release.published') {
     const release: WsAppReleasePublishedMessage = msg;
     if (release.kind === myKind) {
-      console.log(`new ${myKind} release: ${release.version}`);
+      console.log(`nova release de ${myKind}: ${release.version}`);
     }
   }
 }
 ```
 
-## Wire format vs contract names
+### Superfície exportada
 
-Razão histórica: os primeiros satélites foram nomeados antes do contract
-formal. Os valores atualmente em produção (DB Prisma enum, payloads WS,
-secrets em CI) usam:
+| Símbolo | Tipo | Descrição |
+| --- | --- | --- |
+| `SATELLITE_KINDS` | `const` | `['EMPORION', 'PRINT_SERVER', 'HORUS']` — nomes canônicos (contract). |
+| `SatelliteKind` | `type` | União dos kinds do contract. |
+| `WIRE_SATELLITE_KINDS` | `const` | `['POS_EMPORION', 'PRINT_SERVER', 'PUNCH_AGENT']` — wire histórico. |
+| `WireSatelliteKind` | `type` | União do wire format em produção. |
+| `toWireSatelliteKind` | `fn` | `SatelliteKind → WireSatelliteKind`. |
+| `fromWireSatelliteKind` | `fn` | `WireSatelliteKind → SatelliteKind`. |
+| `WIRE_BY_KIND` / `KIND_BY_WIRE` | `const` | Tabelas de tradução nos dois sentidos. |
+| `ReleaseInfo` | `type` | Metadados de uma release (`kind`, `version`, `downloadUrl`, `sha256`, `releaseNotes`, `isCritical`, `releasedAt`). |
+| `WsHelloMessage` | `type` | Cliente → servidor: handshake com `deviceToken`. |
+| `WsHeartbeatMessage` / `WsHeartbeatAckMessage` | `type` | Ping periódico do cliente e ack do servidor. |
+| `WsWelcomeMessage` | `type` | Servidor → cliente: identidade do terminal + `latestRelease` (catch-up). |
+| `WsAppReleasePublishedMessage` | `type` | Servidor → cliente: push de nova release (`extends ReleaseInfo`). |
+| `WsDeviceRevokedMessage` / `DeviceRevokedReason` | `type` | Servidor → cliente: dispositivo descadastrado. |
+| `WsServerMessage` | `type` | _Discriminated union_ de tudo que o servidor envia. |
+| `WsClientMessage` | `type` | _Discriminated union_ de tudo que o cliente envia. |
+
+## 🔀 Wire format vs contract names
+
+Razão histórica: os primeiros satélites foram nomeados antes do contrato formal. Os valores em produção (DB Prisma enum, payloads WS, secrets em CI) usam nomes legados:
 
 | Contract       | Wire (atual)    |
 | -------------- | --------------- |
@@ -102,32 +137,50 @@ secrets em CI) usam:
 | `PRINT_SERVER` | `PRINT_SERVER`  |
 | `HORUS`        | `PUNCH_AGENT`   |
 
-Migração para nomes do contract no wire format será SAT-RELEASE-05 (Prisma
-enum migration aditiva + dual-write transitório). Até lá, este package
-expõe os helpers de tradução acima.
+A migração para os nomes do contract no wire format será feita em **SAT-RELEASE-05** (enum Prisma aditivo + _dual-write_ transitório). Até lá, use sempre `SatelliteKind` no código novo e converta na borda de I/O com os mappers `toWireSatelliteKind` / `fromWireSatelliteKind`.
 
-## Desenvolvimento
+## 📜 Scripts
 
-```bash
-# Instalar deps
-npm install
+| Script | O que faz |
+| --- | --- |
+| `npm run build` | Compila `src/` → `dist/` via `tsc` (CJS). |
+| `npm run rebuild` | `clean` + `build` (limpa `dist/` antes). |
+| `npm run typecheck` | `tsc --noEmit` — checagem de tipos sem emitir. |
+| `npm run test` | Testes unitários com Vitest (round-trip dos mappers). |
+| `npm run test:types` | _Type tests_ com `tsd` (exige `dist/` atualizado). |
+| `npm run lint` | `biome check`. |
+| `npm run format` | `biome format --write`. |
 
-# Build
-npm run build
+## 🗂️ Estrutura
 
-# Testes
-npm run test         # vitest (wire-mapping round-trip)
-npm run test:types   # tsd (type-tests; precisa de dist/ atualizado)
-npm run typecheck    # tsc --noEmit
-
-# Rebuild + commitar dist/
-npm run rebuild
-git add dist/
-git commit -m "chore(build): refresh dist"
+```
+src/
+├── index.ts                  # barrel: re-exporta toda a superfície pública
+├── satellite-kind.ts         # SatelliteKind + SATELLITE_KINDS (contract names)
+├── wire-mapping.ts           # WireSatelliteKind + mappers contract↔wire
+├── release/
+│   └── release-info.ts       # ReleaseInfo
+└── ws/                       # mensagens WebSocket
+    ├── index.ts              # barrel das mensagens
+    ├── envelope.ts           # unions WsServerMessage / WsClientMessage
+    ├── hello.ts              # WsHelloMessage
+    ├── heartbeat.ts          # WsHeartbeatMessage / WsHeartbeatAckMessage
+    ├── welcome.ts            # WsWelcomeMessage
+    ├── app-release-published.ts  # WsAppReleasePublishedMessage
+    └── device-revoked.ts     # WsDeviceRevokedMessage / DeviceRevokedReason
+tests/                        # vitest (.test.ts) + tsd (.test-d.ts)
+dist/                         # build committado (servido via git URL)
 ```
 
-`dist/` é committed no repo — ver `CONTRIBUTING.md` pra release checklist.
+## 🤝 Contribuindo
 
-## Licença
+Projeto pequeno: commits direto em `main` são aceitos; PR é recomendado para mudanças não-triviais (para rodar o CI antes do merge). O CI roda em todo push: typecheck → build → checagem de sincronia do `dist/` → testes → `tsd`.
 
-PROPRIETARY — OpenSea ERP. Uso exclusivo do ecossistema OpenSea.
+> [!IMPORTANT]
+> O `dist/` é **committado** no repo. Após mexer em `src/`, rode `npm run rebuild` e commite o `dist/` junto — o CI falha se `dist/` estiver fora de sincronia com a fonte.
+
+O fluxo completo de release (bump de versão, CHANGELOG, _tag_ anotada, smoke test pós-tag) está em [`CONTRIBUTING.md`](./CONTRIBUTING.md). Histórico de versões em [`CHANGELOG.md`](./CHANGELOG.md).
+
+## 📄 Licença
+
+**PROPRIETARY** — OpenSea ERP. Uso exclusivo do ecossistema OpenSea. Veja [LICENSE](./LICENSE).

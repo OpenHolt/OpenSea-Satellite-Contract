@@ -9,11 +9,7 @@ exports.fromWireSatelliteKind = fromWireSatelliteKind;
  * `SatelliteKind` do contract e converter na borda I/O via os helpers
  * abaixo.
  */
-exports.WIRE_SATELLITE_KINDS = [
-    'POS_EMPORION',
-    'PRINT_SERVER',
-    'PUNCH_AGENT',
-];
+exports.WIRE_SATELLITE_KINDS = ['POS_EMPORION', 'PRINT_SERVER', 'PUNCH_AGENT'];
 exports.WIRE_BY_KIND = {
     EMPORION: 'POS_EMPORION',
     PRINT_SERVER: 'PRINT_SERVER',

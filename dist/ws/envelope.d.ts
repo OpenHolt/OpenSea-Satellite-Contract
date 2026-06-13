@@ -1,7 +1,7 @@
 import type { WsAppReleasePublishedMessage } from './app-release-published';
 import type { WsDeviceRevokedMessage } from './device-revoked';
-import type { WsHelloMessage } from './hello';
 import type { WsHeartbeatAckMessage, WsHeartbeatMessage } from './heartbeat';
+import type { WsHelloMessage } from './hello';
 import type { WsWelcomeMessage } from './welcome';
 /**
  * Toda mensagem que o servidor pode enviar para um satélite. Discriminada
